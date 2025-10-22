@@ -128,9 +128,6 @@ body {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
     cursor: pointer;
     z-index: 100;
-    display: none;
-    /* Hidden until available */
-    transition: transform 0.2s, background 0.3s;
 }
 
 .install-btn:hover {

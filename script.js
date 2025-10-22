@@ -1,65 +1,70 @@
-//===========================
-// Calculator Logic
-// =============================
-const buttons = document.querySelectorAll(".btn");
-const inputField = document.getElementById("input");
-const resultField = document.getElementById("result");
-const clear = document.getElementById("clear");
-const backspace = document.getElementById("backspace");
-const equal = document.getElementById("equal");
+        const display = document.getElementById("display");
+        const buttons = document.querySelectorAll(".btn");
+        const equals = document.getElementById("equals");
+        const clear = document.getElementById("clear");
+        const historyBtn = document.getElementById("historyBtn");
+        const historyContainer = document.getElementById("historyContainer");
+        const historyList = document.getElementById("historyList");
+        const clearHistory = document.getElementById("clearHistory");
+        const installBtn = document.getElementById("installBtn");
 
-let expression = "";
+        let history = JSON.parse(localStorage.getItem("calcHistory")) || [];
+        let deferredPrompt;
 
-buttons.forEach(button => {
-    button.addEventListener("click", () => {
-        const value = button.dataset.value;
-        if (value !== undefined) {
-            expression += value;
-            inputField.textContent = expression;
+        // Calculator buttons
+        buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            display.value += btn.dataset.value;
+        });
+        });
+
+        equals.addEventListener("click", () => {
+        try {
+            const result = eval(display.value);
+            if (result !== undefined) {
+            history.push(`${display.value} = ${result}`);
+            localStorage.setItem("calcHistory", JSON.stringify(history));
+            display.value = result;
+            }
+        } catch {
+            display.value = "Error";
         }
-    });
-});
+        });
 
-clear.addEventListener("click", () => {
-    expression = "";
-    inputField.textContent = "";
-    resultField.textContent = "";
-});
+        clear.addEventListener("click", () => (display.value = ""));
 
-backspace.addEventListener("click", () => {
-    expression = expression.slice(0, -1);
-    inputField.textContent = expression;
-});
+        // History functions
+        historyBtn.addEventListener("click", () => {
+        historyContainer.classList.toggle("hidden");
+        historyList.innerHTML = history.map(item => `<p>${item}</p>`).join("");
+        });
 
-equal.addEventListener("click", () => {
-    try {
-        let result = eval(expression);
-        resultField.textContent = result;
-    } catch {
-        resultField.textContent = "Error";
-    }
-});
+        clearHistory.addEventListener("click", () => {
+        history = [];
+        localStorage.removeItem("calcHistory");
+        historyList.innerHTML = "";
+        });
 
-// =============================
-// PWA Install Button Logic
-// =============================
-let deferredPrompt;
-const installBtn = document.getElementById("installBtn");
+        // PWA: install button
+        window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = "block";
+        });
 
-window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.style.display = "block"; // Show install button
-});
-
-installBtn.addEventListener("click", async () => {
-    installBtn.style.display = "none";
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === "accepted") {
-            console.log("App installed successfully!");
+        installBtn.addEventListener("click", async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === "accepted") {
+            installBtn.style.display = "none";
+            }
         }
-        deferredPrompt = null;
-    }
-});
+        });
+
+        // Register Service Worker
+        if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("service-worker.js")
+            .then(() => console.log("✅ Service Worker registered"))
+            .catch(err => console.log("❌ SW failed:", err));
+        }
